@@ -1,0 +1,7 @@
+numpy>=1.20.0
+pillow>=8.1.0
+pygame>=2.0.1
+opencv>=4.0.1
+python>=3.8.0
+cv2
+gym>=0.18.0
