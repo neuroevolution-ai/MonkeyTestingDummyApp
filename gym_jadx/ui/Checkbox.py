@@ -9,8 +9,6 @@ from gym_jadx.util.MatrixUtils import MatrixUtils
 class Checkbox(Button):
     ARRAY_CLICKED = MatrixUtils.get_numpy_array_of_image('chk_clicked.png')
     ARRAY_UNCLICKED = MatrixUtils.get_numpy_array_of_image('chk_unclicked.png')
-    ARRAY_CLICKED_DISABLED = MatrixUtils.get_numpy_array_of_image('chk_clicked_dis.png')
-    ARRAY_UNCLICKED_DISABLED = MatrixUtils.get_numpy_array_of_image('chk_unclicked_dis.png')
 
     def __init__(self,
                  relative_coordinates: ndarray,
@@ -26,7 +24,6 @@ class Checkbox(Button):
         super().__init__(Checkbox.ARRAY_UNCLICKED,
                          relative_coordinates,
                          Checkbox.ARRAY_CLICKED,
-                         Checkbox.ARRAY_CLICKED_DISABLED,
                          reward,
                          on_click_listener,
                          False)

@@ -12,7 +12,6 @@ class Drawable(ABC):
         self.__relative_coordinates = relative_coordinates
         self.__width = width
         self.__height = height
-        self.__visible = True
 
     @property
     def relative_coordinates(self):
@@ -25,14 +24,6 @@ class Drawable(ABC):
     @property
     def height(self):
         return self.__height
-
-    @property
-    def visible(self):
-        return self.__visible
-
-    @visible.setter
-    def visible(self, value):
-        self.__visible = value
 
     @abstractmethod
     def click(self, click_coordinates: ndarray, parent_coordinates: ndarray) -> (int, bool, ndarray, ndarray):

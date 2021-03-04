@@ -16,7 +16,6 @@ class DropdownButton(Button):
                  relative_coordinates: ndarray,
                  menu_buttons: List[MenuButton],
                  matrix_clicked: ndarray = None,
-                 matrix_disabled: ndarray = None,
                  reward: int = 0,
                  on_click_listener: Callable[[Button], None] = lambda b: None):
         """
@@ -26,11 +25,10 @@ class DropdownButton(Button):
         :param relative_coordinates: Coordinates of the button relative to its parent Drawable
         :param menu_buttons: A List of MenuButton's to be shown on the dropdown menu
         :param matrix_clicked: Image matrix of the button in clicked state
-        :param matrix_disabled: Image matrix of the button in disabled state
         :param reward: The amount of reward this button generates when clicked for the first time
         """
 
-        super().__init__(matrix_unclicked, relative_coordinates, matrix_clicked, matrix_disabled, reward,
+        super().__init__(matrix_unclicked, relative_coordinates, matrix_clicked, reward,
                          on_click_listener)
 
         # Lazy init in click

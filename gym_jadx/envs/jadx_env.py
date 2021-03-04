@@ -1,6 +1,5 @@
 from gym_jadx.ui.Button import Button
 from gym_jadx.ui.Checkbox import Checkbox
-from gym_jadx.ui.Drawable import Drawable
 from gym_jadx.ui.DropdownButton import DropdownButton
 from gym_jadx.ui.MenuButton import MenuButton
 from gym_jadx.ui.Window import Window
@@ -121,11 +120,6 @@ class JadxEnv(gym.Env):
         self.__should_re_stack = True
         return removed
 
-    def __change_visibility(self, drawable: Drawable, value: bool):
-        drawable.visible = value
-        self.__windows[-1].draw_self()
-        self.__should_re_stack = True
-
     def __is_window_going_to_be_removed(self, window: Window) -> bool:
         for win in self.__windows_to_be_removed:
             if win == window:
@@ -141,109 +135,65 @@ class JadxEnv(gym.Env):
         return final
 
     def __init_components(self) -> Window:
-        # Load drawable images
-        # --------------------------------------------------------------------------------------------------
-        main_window_array = MatrixUtils.get_numpy_array_of_image('main_window.png')
+        main_window_children = []
 
+        app_close_button = self.__init_app_close_button()
+        main_window_children.append(app_close_button)
+
+        # Init dropdown buttons
+        dropdown_button_position = 0
+
+        dropdown_button_datei = self.__init_dropdown_button_datei(dropdown_button_position)
+        main_window_children.append(dropdown_button_datei)
+        dropdown_button_position += dropdown_button_datei.width
+
+        dropdown_button_anzeigen = self.__init_dropdown_button_anzeigen(dropdown_button_position)
+        main_window_children.append(dropdown_button_anzeigen)
+        dropdown_button_position += dropdown_button_anzeigen.width
+
+        dropdown_button_navigation = self.__init_dropdown_button_navigation(dropdown_button_position)
+        main_window_children.append(dropdown_button_navigation)
+        dropdown_button_position += dropdown_button_navigation.width
+
+        dropdown_button_tools = self.__init_dropdown_button_tools(dropdown_button_position)
+        main_window_children.append(dropdown_button_tools)
+        dropdown_button_position += dropdown_button_tools.width
+
+        dropdown_button_hilfe = self.__init_dropdown_button_hilfe(dropdown_button_position)
+        main_window_children.append(dropdown_button_hilfe)
+
+        # Init small buttons in main window
+        main_window_small_buttons = self.__init_main_window_small_buttons()
+        main_window_children.extend(main_window_small_buttons)
+
+        # Return main window
+        main_window_array = MatrixUtils.get_numpy_array_of_image('main_window.png')
+        return Window(main_window_array, main_window_children, np.array([0, 0]))
+
+    def __init_app_close_button(self):
         close_button_large_array = MatrixUtils.get_numpy_array_of_image('close_window_button_large_unclicked.png')
 
-        uber_window_array = MatrixUtils.get_numpy_array_of_image('window_über.png')
+        def close_application(_):
+            self.__done = True
 
-        close_uber_window_button_array = MatrixUtils.get_numpy_array_of_image('close_über_window_button.png')
-        close_button_array = MatrixUtils.get_numpy_array_of_image('close_window_button_unclicked.png')
+        app_close_button = Button(close_button_large_array, np.array([380, 0]), reward=2,
+                                  on_click_listener=close_application)
+        self.__all_buttons.append(app_close_button)
+        return app_close_button
 
-        preferences_window_array = MatrixUtils.get_numpy_array_of_image('window_preferences.png')
-        preferences_window_abbrechen_button_array = MatrixUtils.get_numpy_array_of_image('button_abbrechen_unclicked.png')
-        preferences_window_speichern_button_array = MatrixUtils.get_numpy_array_of_image('button_speichern_unclicked.png')
-        preferences_window_zuruecksetzen_unclicked_array = MatrixUtils.get_numpy_array_of_image('button_zuruecksetzen_unclicked.png')
-        preferences_window_zuruecksetzen_clicked_array = MatrixUtils.get_numpy_array_of_image('button_zuruecksetzen_clicked.png')
-        preferences_window_clipboard_unclicked_array = MatrixUtils.get_numpy_array_of_image('button_clipboard_unclicked.png')
-        preferences_window_clipboard_clicked_array = MatrixUtils.get_numpy_array_of_image('button_clipboard_clicked.png')
-        preferences_window_aendern_unclicked_array = MatrixUtils.get_numpy_array_of_image('button_aendern_unclicked.png')
-        preferences_window_aendern_clicked_array = MatrixUtils.get_numpy_array_of_image('button_aendern_clicked.png')
-        preferences_window_bearbeiten_unclicked_array = MatrixUtils.get_numpy_array_of_image('button_bearbeiten_unclicked.png')
-        preferences_window_bearbeiten_clicked_array = MatrixUtils.get_numpy_array_of_image('button_bearbeiten_clicked.png')
-        preferences_window_close_array = MatrixUtils.get_numpy_array_of_image('close_pref_button.png')
-
+    def __init_dropdown_button_datei(self, position):
+        menu_button_preferences_unclicked_array = MatrixUtils.get_numpy_array_of_image(
+            'menu_button_preferences_unclicked.png')
         dropdown_datei_unclicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_datei_unclicked.png')
         dropdown_datei_clicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_datei_clicked.png')
-        dropdown_anzeigen_unclicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_anzeigen_unclicked.png')
-        dropdown_anzeigen_clicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_anzeigen.png')
-        dropdown_hilfe_unclicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_hilfe_unclicked.png')
-        dropdown_hilfe_clicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_hilfe_clicked.png')
-        dropdown_navigation_unclicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_navigation_unclicked.png')
-        dropdown_navigation_clicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_navigation_clicked.png')
-        dropdown_tools_unclicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_tools_unclicked.png')
-        dropdown_tools_clicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_tools_clicked.png')
-
-        small_button_arrays = []
-        for i in range(1, 14):
-            small_button_arrays.append(MatrixUtils.get_numpy_array_of_image('small_button_' + str(i) + '_unclicked.png'))
-            small_button_arrays.append(MatrixUtils.get_numpy_array_of_image('small_button_' + str(i) + '_clicked.png'))
-
-        menu_button_uber_unclicked_array = MatrixUtils.get_numpy_array_of_image('menu_über_unclicked.png')
-
-        menu_button_other_unclicked_array = MatrixUtils.get_numpy_array_of_image('menu_button_1.png')
-        menu_button_other_clicked_array = MatrixUtils.get_numpy_array_of_image('menu_button_1_clicked.png')
-
-        menu_button_preferences_unclicked_array = MatrixUtils.get_numpy_array_of_image('menu_button_preferences_unclicked.png')
-
-        # --------------------------------------------------------------------------------------------------
-
-        # Define click listeners
-        # --------------------------------------------------------------------------------------------------
-        def open_uber(_):
-            # Close dropdown menu first
-            self.__remove_window()
-            self.__add_window(uber_window)
+        preferences_window = self.__init_preferences_window()
 
         def open_preferences(_):
             # Close dropdown menu first
             self.__remove_window()
             self.__add_window(preferences_window)
 
-        def open_dropdown_menu(btn: DropdownButton):
-            # Button is clicked while its dropdown menu was active -> Make button unclicked instead of opening the menu
-            if self.__is_window_going_to_be_removed(btn.menu):
-                btn.clicked = False
-            else:
-                btn.menu = Window(btn.background_matrix, btn.menu_buttons,
-                                  btn.parent_coords + btn.relative_coordinates + np.array([0, btn.height]),
-                                  False,
-                                  True)
-                self.__add_window(btn.menu)
-
-        """
-        def hide_button(btn: Button):
-            self.change_visibility(btn, not btn.visible)
-        """
-
-        def close_window(_):
-            self.__remove_window()
-
-        def close_application(_):
-            self.__done = True
-
-        # --------------------------------------------------------------------------------------------------
-
-        # Initialize components
-        # --------------------------------------------------------------------------------------------------
-
-        # Init dropdown buttons in main window
-        # --------------------------------------------------------------------------------------------------
-        next_pos = 0
-        main_window_children = []
-
-        app_close_button = Button(close_button_large_array, np.array([380, 0]), reward=2,
-                                  on_click_listener=close_application)
-        self.__all_buttons.append(app_close_button)
-        main_window_children.append(app_close_button)
-
-        dropdown_button_datei_children = []
-        for i in range(0, 10):
-            button = MenuButton(menu_button_other_unclicked_array, menu_button_other_clicked_array, reward=2)
-            dropdown_button_datei_children.append(button)
-            self.__all_buttons.append(button)
+        open_dropdown_menu, dropdown_button_datei_children = self.__init_default_dropdown_menu(10)
 
         preferences_button = MenuButton(menu_button_preferences_unclicked_array,
                                         reward=2,
@@ -251,94 +201,123 @@ class JadxEnv(gym.Env):
         dropdown_button_datei_children.append(preferences_button)
         self.__all_buttons.append(preferences_button)
 
-        dropdown_button_datei = DropdownButton(dropdown_datei_unclicked_array, np.array([next_pos, 12]),
+        dropdown_button_datei = DropdownButton(dropdown_datei_unclicked_array, np.array([position, 12]),
                                                dropdown_button_datei_children,
                                                dropdown_datei_clicked_array, reward=2,
                                                on_click_listener=open_dropdown_menu)
         self.__all_buttons.append(dropdown_button_datei)
 
-        next_pos += dropdown_button_datei.width
-        main_window_children.append(dropdown_button_datei)
+        return dropdown_button_datei
 
-        dropdown_button_anzeigen_children = []
-        for i in range(0, 3):
-            button = MenuButton(menu_button_other_unclicked_array, menu_button_other_clicked_array, reward=2)
-            dropdown_button_anzeigen_children.append(button)
-            self.__all_buttons.append(button)
+    def __init_dropdown_button_anzeigen(self, position):
+        dropdown_anzeigen_unclicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_anzeigen_unclicked.png')
+        dropdown_anzeigen_clicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_anzeigen.png')
+
+        open_dropdown_menu, dropdown_button_anzeigen_children = self.__init_default_dropdown_menu(3)
 
         dropdown_button_anzeigen = DropdownButton(dropdown_anzeigen_unclicked_array,
-                                                  np.array([next_pos, 12]),
+                                                  np.array([position, 12]),
                                                   dropdown_button_anzeigen_children,
                                                   dropdown_anzeigen_clicked_array, reward=2,
                                                   on_click_listener=open_dropdown_menu)
         self.__all_buttons.append(dropdown_button_anzeigen)
+        return dropdown_button_anzeigen
 
-        next_pos += dropdown_button_anzeigen.width
-        main_window_children.append(dropdown_button_anzeigen)
+    def __init_dropdown_button_navigation(self, position):
+        dropdown_navigation_unclicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_navigation_unclicked.png')
+        dropdown_navigation_clicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_navigation_clicked.png')
 
-        dropdown_button_navigation_children = []
-        for i in range(0, 4):
-            button = MenuButton(menu_button_other_unclicked_array, menu_button_other_clicked_array, reward=2)
-            dropdown_button_navigation_children.append(button)
-            self.__all_buttons.append(button)
+        open_dropdown_menu, dropdown_button_navigation_children = self.__init_default_dropdown_menu(4)
 
         dropdown_button_navigation = DropdownButton(dropdown_navigation_unclicked_array,
-                                                    np.array([next_pos, 12]),
+                                                    np.array([position, 12]),
                                                     dropdown_button_navigation_children,
                                                     dropdown_navigation_clicked_array, reward=2,
                                                     on_click_listener=open_dropdown_menu)
         self.__all_buttons.append(dropdown_button_navigation)
+        return dropdown_button_navigation
 
-        next_pos += dropdown_button_navigation.width
-        main_window_children.append(dropdown_button_navigation)
+    def __init_dropdown_button_tools(self, position):
+        dropdown_tools_unclicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_tools_unclicked.png')
+        dropdown_tools_clicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_tools_clicked.png')
 
-        dropdown_button_tools_children = []
-        for i in range(0, 2):
-            button = MenuButton(menu_button_other_unclicked_array, menu_button_other_clicked_array, reward=2)
-            dropdown_button_tools_children.append(button)
-            self.__all_buttons.append(button)
+        open_dropdown_menu, dropdown_button_tools_children = self.__init_default_dropdown_menu(2)
 
         dropdown_button_tools = DropdownButton(dropdown_tools_unclicked_array,
-                                               np.array([next_pos, 12]),
+                                               np.array([position, 12]),
                                                dropdown_button_tools_children,
                                                dropdown_tools_clicked_array, reward=2,
                                                on_click_listener=open_dropdown_menu)
         self.__all_buttons.append(dropdown_button_tools)
+        return dropdown_button_tools
 
-        next_pos += dropdown_button_tools.width
-        main_window_children.append(dropdown_button_tools)
+    def __init_dropdown_button_hilfe(self, position):
+        dropdown_hilfe_unclicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_hilfe_unclicked.png')
+        dropdown_hilfe_clicked_array = MatrixUtils.get_numpy_array_of_image('drpdwn_hilfe_clicked.png')
+        menu_button_uber_unclicked_array = MatrixUtils.get_numpy_array_of_image('menu_über_unclicked.png')
+        uber_window = self.__init_uber_window()
+
+        open_dropdown_menu, _ = self.__init_default_dropdown_menu(0)
+
+        def open_uber(_):
+            # Close dropdown menu first
+            self.__remove_window()
+            self.__add_window(uber_window)
 
         menu_button_uber = MenuButton(menu_button_uber_unclicked_array, reward=2,
                                       on_click_listener=open_uber)
         self.__all_buttons.append(menu_button_uber)
 
         dropdown_button_hilfe = DropdownButton(dropdown_hilfe_unclicked_array,
-                                               np.array([next_pos, 12]),
+                                               np.array([position, 12]),
                                                [menu_button_uber],
                                                dropdown_hilfe_clicked_array, reward=2,
                                                on_click_listener=open_dropdown_menu)
         self.__all_buttons.append(dropdown_button_hilfe)
+        return dropdown_button_hilfe
 
-        main_window_children.append(dropdown_button_hilfe)
-        # --------------------------------------------------------------------------------------------------
+    def __init_uber_window(self):
+        uber_window_array = MatrixUtils.get_numpy_array_of_image('window_über.png')
+        close_uber_window_button_array = MatrixUtils.get_numpy_array_of_image('close_über_window_button.png')
+        close_button_array = MatrixUtils.get_numpy_array_of_image('close_window_button_unclicked.png')
 
-        # Init small buttons in main window
-        # --------------------------------------------------------------------------------------------------
-        k = 0
-        for i in range(1, 86, 7):
-            small_button = Button(small_button_arrays[k],
-                                  np.array([i, 22]),
-                                  small_button_arrays[k + 1],
-                                  reward=2,
-                                  resettable=False)
-            self.__all_buttons.append(small_button)
-            main_window_children.append(small_button)
-            k += 2
+        def close_window(_):
+            self.__remove_window()
 
-        # --------------------------------------------------------------------------------------------------
+        close_uber_button_1 = Button(close_button_array, np.array([80, 1]), reward=2, on_click_listener=close_window)
+        self.__all_buttons.append(close_uber_button_1)
+        close_uber_button_2 = Button(close_uber_window_button_array, np.array([1, 87]), reward=2,
+                                     on_click_listener=close_window)
+        self.__all_buttons.append(close_uber_button_2)
+        uber_window = Window(uber_window_array, [close_uber_button_1, close_uber_button_2], np.array([273, 123]))
+        return uber_window
 
-        # Init preferences window
-        # --------------------------------------------------------------------------------------------------
+    def __init_preferences_window(self):
+        preferences_window_array = MatrixUtils.get_numpy_array_of_image('window_preferences.png')
+        preferences_window_abbrechen_button_array = MatrixUtils.get_numpy_array_of_image(
+            'button_abbrechen_unclicked.png')
+        preferences_window_speichern_button_array = MatrixUtils.get_numpy_array_of_image(
+            'button_speichern_unclicked.png')
+        preferences_window_zuruecksetzen_unclicked_array = MatrixUtils.get_numpy_array_of_image(
+            'button_zuruecksetzen_unclicked.png')
+        preferences_window_zuruecksetzen_clicked_array = MatrixUtils.get_numpy_array_of_image(
+            'button_zuruecksetzen_clicked.png')
+        preferences_window_clipboard_unclicked_array = MatrixUtils.get_numpy_array_of_image(
+            'button_clipboard_unclicked.png')
+        preferences_window_clipboard_clicked_array = MatrixUtils.get_numpy_array_of_image(
+            'button_clipboard_clicked.png')
+        preferences_window_aendern_unclicked_array = MatrixUtils.get_numpy_array_of_image(
+            'button_aendern_unclicked.png')
+        preferences_window_aendern_clicked_array = MatrixUtils.get_numpy_array_of_image('button_aendern_clicked.png')
+        preferences_window_bearbeiten_unclicked_array = MatrixUtils.get_numpy_array_of_image(
+            'button_bearbeiten_unclicked.png')
+        preferences_window_bearbeiten_clicked_array = MatrixUtils.get_numpy_array_of_image(
+            'button_bearbeiten_clicked.png')
+        preferences_window_close_array = MatrixUtils.get_numpy_array_of_image('close_pref_button.png')
+
+        def close_window(_):
+            self.__remove_window()
+
         preferences_window_children = []
         preferences_window_checkbox_coords = [[136, 25], [169, 102], [169, 113], [169, 125], [155, 145], [148, 206],
                                               [148, 218], [148, 230], [312, 64], [312, 82], [312, 100], [312, 118],
@@ -394,19 +373,48 @@ class JadxEnv(gym.Env):
         self.__all_buttons.append(close_preferences_button)
         preferences_window_children.append(close_preferences_button)
 
-        preferences_window = Window(preferences_window_array, preferences_window_children, np.array([2, 2]))
-        # --------------------------------------------------------------------------------------------------
+        return Window(preferences_window_array, preferences_window_children, np.array([2, 2]))
 
-        # Init über window
-        # --------------------------------------------------------------------------------------------------
-        close_uber_button_1 = Button(close_button_array, np.array([80, 1]), reward=2, on_click_listener=close_window)
-        self.__all_buttons.append(close_uber_button_1)
-        close_uber_button_2 = Button(close_uber_window_button_array, np.array([1, 87]), reward=2,
-                                     on_click_listener=close_window)
-        self.__all_buttons.append(close_uber_button_2)
-        uber_window = Window(uber_window_array, [close_uber_button_1, close_uber_button_2], np.array([273, 123]))
+    def __init_main_window_small_buttons(self):
+        small_button_arrays = []
+        for i in range(1, 14):
+            small_button_arrays.append(
+                MatrixUtils.get_numpy_array_of_image('small_button_' + str(i) + '_unclicked.png'))
+            small_button_arrays.append(MatrixUtils.get_numpy_array_of_image('small_button_' + str(i) + '_clicked.png'))
 
-        # --------------------------------------------------------------------------------------------------
-        # --------------------------------------------------------------------------------------------------
-        # Return main window
-        return Window(main_window_array, main_window_children, np.array([0, 0]))
+        k = 0
+        buttons = []
+        for i in range(1, 86, 7):
+            small_button = Button(small_button_arrays[k],
+                                  np.array([i, 22]),
+                                  small_button_arrays[k + 1],
+                                  reward=2,
+                                  resettable=False)
+            self.__all_buttons.append(small_button)
+            buttons.append(small_button)
+            k += 2
+        return buttons
+
+    def __init_default_dropdown_menu(self, menu_size):
+        menu_button_other_unclicked_array = MatrixUtils.get_numpy_array_of_image('menu_button_1.png')
+        menu_button_other_clicked_array = MatrixUtils.get_numpy_array_of_image('menu_button_1_clicked.png')
+
+        def open_dropdown_menu(btn: DropdownButton):
+            # Button is clicked while its dropdown menu was active -> Make button unclicked instead of opening the menu
+            if self.__is_window_going_to_be_removed(btn.menu):
+                btn.clicked = False
+            else:
+                btn.menu = Window(btn.background_matrix, btn.menu_buttons,
+                                  btn.parent_coords + btn.relative_coordinates + np.array([0, btn.height]),
+                                  False,
+                                  True)
+                self.__add_window(btn.menu)
+
+        dropdown_button_children = []
+        for i in range(0, menu_size):
+            button = MenuButton(menu_button_other_unclicked_array,
+                                menu_button_other_clicked_array, reward=2)
+            dropdown_button_children.append(button)
+            self.__all_buttons.append(button)
+
+        return open_dropdown_menu, dropdown_button_children

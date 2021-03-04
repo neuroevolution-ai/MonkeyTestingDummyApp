@@ -1,10 +1,13 @@
+import gym
+
 from gym_jadx.envs.jadx_env import JadxEnv
 import pygame
 import numpy as np
 import time
 import cv2
+from numpy import ndarray
 
-env = JadxEnv()
+env = gym.make('jadx-v0')
 DISPLAY_SIZE = (1280, 720)
 ENV_SIZE = (env.width, env.height)
 WIDTH_RATIO = DISPLAY_SIZE[0] / ENV_SIZE[0]
@@ -12,9 +15,15 @@ HEIGHT_RATIO = DISPLAY_SIZE[1] / ENV_SIZE[1]
 
 pygame.init()
 display = pygame.display.set_mode(DISPLAY_SIZE)
-resized = cv2.resize(env.frame_buffer, dsize=(DISPLAY_SIZE[1], DISPLAY_SIZE[0]))
-pygame.surfarray.blit_array(display, resized)
-pygame.display.update()
+
+
+def update_pygame_display(new_frame: ndarray):
+    resized = cv2.resize(new_frame, dsize=(DISPLAY_SIZE[1], DISPLAY_SIZE[0]))
+    pygame.surfarray.blit_array(display, resized)
+    pygame.display.update()
+
+
+update_pygame_display(env.frame_buffer)
 
 running = True
 while running:
@@ -32,17 +41,9 @@ while running:
                 print('Done: ' + str(done))
                 if done:
                     print(env.get_progress())
-                resized = cv2.resize(observation, dsize=(DISPLAY_SIZE[1], DISPLAY_SIZE[0]))
-                pygame.surfarray.blit_array(display, resized)
-                pygame.display.update()
+                    observation = env.reset()
+                update_pygame_display(observation)
             # Right click
             elif event.button == 3:
                 observation = env.reset()
-                resized = cv2.resize(observation, dsize=(DISPLAY_SIZE[1], DISPLAY_SIZE[0]))
-                pygame.surfarray.blit_array(display, resized)
-                pygame.display.update()
-
-
-pygame.quit()
-print(env.get_progress())
-env.render()
+                update_pygame_display(observation)

@@ -33,14 +33,13 @@ class Window(CompositeDrawable):
 
     def click(self, click_coordinates: ndarray, parent_coordinates: ndarray = None) -> (int, bool, ndarray, ndarray):
         click_on_window = False
-        if self.visible:
-            if MatrixUtils.includes_point(click_coordinates, self.relative_coordinates, self.width, self.height):
-                click_on_window = True
-                for child in self.children:
-                    reward, click_on_child, matrix, coords = child.click(click_coordinates, self.relative_coordinates)
-                    if click_on_child:
-                        MatrixUtils.blit_image_inplace(self.__current_matrix, matrix, coords[0], coords[1])
-                        return reward, click_on_window, matrix, coords + self.relative_coordinates
+        if MatrixUtils.includes_point(click_coordinates, self.relative_coordinates, self.width, self.height):
+            click_on_window = True
+            for child in self.children:
+                reward, click_on_child, matrix, coords = child.click(click_coordinates, self.relative_coordinates)
+                if click_on_child:
+                    MatrixUtils.blit_image_inplace(self.__current_matrix, matrix, coords[0], coords[1])
+                    return reward, click_on_window, matrix, coords + self.relative_coordinates
 
         return 0, click_on_window, None, None
 
