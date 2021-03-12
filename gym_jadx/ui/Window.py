@@ -17,7 +17,10 @@ class Window(CompositeDrawable):
         self.__current_matrix = None
         self.draw_self()
         self.__modal = modal
-        self.__auto_close = auto_close
+        if modal:
+            self.__auto_close = False
+        else:
+            self.__auto_close = auto_close
 
     @property
     def current_matrix(self):

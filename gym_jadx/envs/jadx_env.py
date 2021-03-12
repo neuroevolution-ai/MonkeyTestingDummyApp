@@ -23,6 +23,7 @@ class JadxEnv(gym.Env):
         self.__height = main_window.height
         self.__should_re_stack = False
         self.__done = False
+        self.__last_clicked_index = 0
         self.__windows_to_be_removed = []
 
     @property
@@ -44,6 +45,7 @@ class JadxEnv(gym.Env):
         self.__frame_buffer = main_window.current_matrix.copy()
         self.__should_re_stack = False
         self.__done = False
+        self.__last_clicked_index = 0
         return self.__frame_buffer
 
     def close(self):
@@ -77,6 +79,7 @@ class JadxEnv(gym.Env):
         # the current window is not modal
         for i in range(-1, -len(self.__windows) - 1, -1):
             index = i + number_of_windows_to_be_removed
+            self.__last_clicked_index = len(self.__windows) + index
             reward, window_includes_point, clicked_child_component_matrix, clicked_child_component_coords = \
                 self.__windows[index].click(action)
             if window_includes_point:
@@ -94,8 +97,9 @@ class JadxEnv(gym.Env):
                     break
                 elif self.__windows[index].auto_close:
                     # Save the removed window for future reference and continue with the loop
-                    removed_window = self.__remove_window()
-                    self.__windows_to_be_removed.append(removed_window)
+                    window_to_be_removed = self.__windows[index]
+                    self.__remove_window(window_to_be_removed)
+                    self.__windows_to_be_removed.append(window_to_be_removed)
                     number_of_windows_to_be_removed += 1
 
         # Redraw all windows by stacking them up from the bottom to the top, if needed
@@ -108,17 +112,25 @@ class JadxEnv(gym.Env):
         return self.__frame_buffer, reward, self.__done, None
 
     def __add_window(self, window: Window):
-        self.__windows.append(window)
+        self.__windows.insert(self.__last_clicked_index + 1, window)
         MatrixUtils.blit_image_inplace(self.__frame_buffer,
                                        window.current_matrix,
                                        window.relative_coordinates[0], window.relative_coordinates[1])
 
-    def __remove_window(self) -> Window:
-        removed = self.__windows.pop()
-        removed.reset()
-        self.__windows[-1].reset()
+    def __remove_window(self, window=None):
+        if window is None:
+            removed = self.__windows[self.__last_clicked_index]
+            window_under = self.__windows[self.__last_clicked_index - 1]
+            del self.__windows[self.__last_clicked_index]
+            removed.reset()
+            window_under.reset()
+        else:
+            index_of_window = self.__windows.index(window)
+            window_under = self.__windows[index_of_window - 1]
+            del self.__windows[index_of_window]
+            window.reset()
+            window_under.reset()
         self.__should_re_stack = True
-        return removed
 
     def __is_window_going_to_be_removed(self, window: Window) -> bool:
         for win in self.__windows_to_be_removed:
@@ -289,7 +301,7 @@ class JadxEnv(gym.Env):
         close_uber_button_2 = Button(close_uber_window_button_array, np.array([1, 87]), reward=2,
                                      on_click_listener=close_window)
         self.__all_buttons.append(close_uber_button_2)
-        uber_window = Window(uber_window_array, [close_uber_button_1, close_uber_button_2], np.array([273, 123]))
+        uber_window = Window(uber_window_array, [close_uber_button_1, close_uber_button_2], np.array([273, 123]), modal=True)
         return uber_window
 
     def __init_preferences_window(self):
@@ -373,7 +385,7 @@ class JadxEnv(gym.Env):
         self.__all_buttons.append(close_preferences_button)
         preferences_window_children.append(close_preferences_button)
 
-        return Window(preferences_window_array, preferences_window_children, np.array([2, 2]))
+        return Window(preferences_window_array, preferences_window_children, np.array([2, 2]), modal=True)
 
     def __init_main_window_small_buttons(self):
         small_button_arrays = []

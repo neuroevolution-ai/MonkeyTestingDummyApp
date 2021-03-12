@@ -3,7 +3,6 @@ import gym
 from gym_jadx.envs.jadx_env import JadxEnv
 import pygame
 import numpy as np
-import time
 import cv2
 from numpy import ndarray
 
@@ -24,7 +23,7 @@ def update_pygame_display(new_frame: ndarray):
 
 
 update_pygame_display(env.frame_buffer)
-
+i = 1
 running = True
 while running:
     for event in pygame.event.get():
@@ -34,12 +33,11 @@ while running:
             # Left click
             if event.button == 1:
                 point = np.array([event.pos[0] / WIDTH_RATIO, event.pos[1] / HEIGHT_RATIO])
-                start = time.process_time()
                 observation, reward, done, _ = env.step(point)
-                print('Frame Time: ' + str((time.process_time() - start) * 1000) + ' ms')
-                print('Reward: ' + str(reward))
-                print('Done: ' + str(done))
+                print('Click: ' + str(i) + ' Reward: ' + str(reward))
+                i += 1
                 if done:
+                    print('Done: True')
                     print(env.get_progress())
                     observation = env.reset()
                 update_pygame_display(observation)

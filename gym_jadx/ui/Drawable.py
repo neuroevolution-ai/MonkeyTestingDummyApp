@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-
+import uuid
 from numpy import ndarray
 
 
@@ -12,6 +12,7 @@ class Drawable(ABC):
         self.__relative_coordinates = relative_coordinates
         self.__width = width
         self.__height = height
+        self.__unique_id = uuid.uuid4()
 
     @property
     def relative_coordinates(self):
@@ -24,6 +25,10 @@ class Drawable(ABC):
     @property
     def height(self):
         return self.__height
+
+    @property
+    def unique_id(self):
+        return self.__unique_id
 
     @abstractmethod
     def click(self, click_coordinates: ndarray, parent_coordinates: ndarray) -> (int, bool, ndarray, ndarray):
@@ -48,3 +53,8 @@ class Drawable(ABC):
     @abstractmethod
     def reset(self) -> bool:
         pass
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        return self.__unique_id == other.unique_id
